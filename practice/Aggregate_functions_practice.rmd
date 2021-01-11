@@ -1,0 +1,84 @@
+---
+title: "Aggregate functions practice"
+output: html_document
+---
+
+For these practice problems, we will use the gapminder data in the gapminder library (you must install it first). We also load the usual RSQLite package:
+```{r}
+library(gapminder)
+library(RSQLite)
+```
+
+You can see the definitions of the columns by using the help() function:
+```{r}
+help(gapminder)
+```
+
+Then, we write the gapminder dataframe to a database table also named gapminder using the following code:
+```{r}
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "gapminder", gapminder)
+```
+
+
+1. Which year had the 3rd longest average life expectancy?
+```{r}
+query1 <- "select year, avg(lifeExp) as avgLife
+from gapminder group by year order by avgLife desc"
+dbGetQuery(con, query1)
+```
+
+2. Which continent had the largest average gdpPercap in 1992?
+```{r}
+query2 <- "select continent, avg(gdpPercap) as gdp from gapminder 
+group by continent order by gdp desc"
+dbGetQuery(con, query2)
+```
+
+3. How many African countries have data in the table for 2007?
+```{r}
+query3 <- "select continent, count(country) from gapminder where year = 2007 
+group by continent"
+dbGetQuery(con, query3)
+```
+
+4. What was the average gdpPercap for the continent with the lowest average life expectancy in 2007?
+```{r}
+query4 <- "select continent, avg(gdpPercap) as gdp, min(lifeExp) as life 
+from gapminder where year = 2007 group by continent order by life "
+dbGetQuery(con, query4)
+```
+
+5. Which country has the longest life expectancy, averaged over all years in the table?
+```{r}
+query5 <- "select country, avg(lifeExp) as life from gapminder 
+group by country order by life desc"
+dbGetQuery(con, query5)
+```
+
+6. How many countries have average life expectancies between 65 and 75, inclusive? (Average over all years in the table.)
+```{r}
+query6 <- "select country, avg(lifeExp) as life from gapminder 
+group by country having life between 65 and 75"
+dbGetQuery(con, query6)
+```
+```{r}
+dbDisconnect(con)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

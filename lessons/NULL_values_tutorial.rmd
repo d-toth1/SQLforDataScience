@@ -1,0 +1,49 @@
+---
+title: "NULL value examples"
+author: "AH"
+date: "June 5, 2020"
+output: html_document
+---
+Topics covered: NULL values
+Preqrequisites: WHERE clause, SELECT statment, ORDER BY clause
+
+NULL values are values of the variable that are unknown or not available. The Lahman baseball database contains some very convenient examples of NULL values. 
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "lahmansbaseballdb.sqlite")
+```
+
+Let's use the people table and grab the last name, first name, final game, and death year:
+```{r}
+query1 <- "SELECT nameLast, nameFirst, finalGame, deathYear
+           FROM people
+           ORDER BY nameLast, nameFirst"
+dbGetQuery(con, query1)
+```
+Just glancing at the first few records, we see that for many players, the value of deathYear is "NA". This is an example of a NULL value in R. An important distinction is that NULL values are not zero. For this example, common sense tells us that players with a value of NA for deathYear are still alive. 
+
+Let's do another query, this time grabbing all the records of players who are still alive, i.e. who have NA for deathYear:
+```{r}
+query2 <- "SELECT nameLast, nameFirst, finalGame, deathYear
+           FROM people
+           WHERE deathYear IS NULL
+           ORDER BY nameLast, nameFirst"
+dbGetQuery(con, query2)
+```
+Note, IS NULL is a predictate to use with the WHERE clause, just like the IN and BETWEEN predicates we learned about in the WHERE clause tutorial. Also note, in the above example, we did not type "WHERE deathYear = NULL". SQL uses the special "IS" operator when dealing with NULL values.
+
+It is very easy to get the records for player who have died, i.e. whose deathYear is not NULL:
+```{r}
+query3 <- "SELECT nameLast, nameFirst, finalGame, deathYear
+           FROM people
+           WHERE deathYear IS NOT NULL
+           ORDER BY nameLast, nameFirst"
+dbGetQuery(con, query3)
+```
+
+
+Close connection to finish
+```{r}
+dbDisconnect(con)
+```
+

@@ -1,0 +1,80 @@
+---
+title: "Basic Concepts"
+output: html_document
+---
+
+This tutorial serves as a first-day intro to databases. 
+Learninng Objectives:
+We will
+(1) See how to connect to a data base
+(2) Perform some basic exploration of a database
+(3) Learn some basic queries.
+
+
+First, we load the RSQLite library:
+```{r}
+library(RSQLite)
+```
+There are many ways to use SQL in R. A list of R packages implementing SQL can be found here:
+https://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/sql.html
+We are using the RSQlite mainly because it is lightweight (doesn't take much memory), and it does not require any external software. So, it is perfect to get started.  
+
+Then, we establish a connection to the database. We start by using the Lahman Baseball Database. We will call the connection "con". Note, if your R Markdown file is saved in the SAME place as your database, you don't need to specify a path. This, of course, is the easiest way to set up your files. If you want to save the database in a different location than your R Markdown file, you must specify a path. My files are in the same location, so I can don't need to specify the path. However, the code that is commented out serves as an example of setting a path, if you wish to do that. 
+```{r}
+#con <- dbConnect(SQLite(), "C:/Users/ahuebne2/Dropbox/SQL Course/lahman.sqlite")
+con <- dbConnect(SQLite(), "lahmansbaseballdb.sqlite")
+```
+
+One of the first things we would want to do is see a list of all the tables in the database. We can use the dbListTables() function with argument "con", i.e. the name of the database connection. 
+```{r}
+dbListTables(con)
+```
+Each table is similar to a dataframe in R, as each has rows and columns. We refer to the rows as "records" or "observations", and we refer to the columns as "variables" or "fields". 
+
+
+Then, we can list the columns, or fields in a given table using the dbLlistFields() function, where the first argument is the connection and the second argument is the desired table:
+```{r}
+dbListFields(con, "batting")
+```
+Lists and descriptions for all tables and fields in the Lahman Baseball Database can be found here: http://www.seanlahman.com/files/database/readme2017.txt
+You may need to refer to this documentation later on.
+
+Now that we've connected to the database and explored it a little bit, let's try some queries. We will start with a very basic query, and throughout the course we will make them more complex. The basic format will be the same: we will define a query within double quotes, and then the dbGetQuery() function to execute the query. The arguments are the connection name and the query name.
+
+Let's start with a simple query. We will view the AllstarFull table. The SELECT statement let's me select specific columns, but here I am using the asterisk (*) so that all tables are listed. Then, I specify the table name 
+```{r}
+query1 = "SELECT *
+         FROM AllstarFull"
+dbGetQuery(con, query1)
+```
+
+I was a baseball fan from the age of seven until about 33, when my first child was born. Nonetheless, until I wrote this tutorial, I didn't know that in some baseball seasons (1959 through 1962) there were two all-star games played. Looking at the documentation, the gameNum field represents the game number, which takes value 0 if only one game was played. Suppose we wanted to do an analysis on seasons in which only one game was played. We can pull this data using the WHERE clause:
+```{r}
+query2 = "SELECT *
+         FROM AllstarFull
+         WHERE gameNum = 0"
+dbGetQuery(con, query2)
+```
+
+Suppose we wish to pull data for which there was only one game played, but limit it to pitchers only (startingPos = 1). Then we can use a WHERE clause with two conditions:
+```{r}
+query3 = "SELECT *
+         FROM AllstarFull
+         WHERE gameNum = 0 AND startingPos = 1"
+dbGetQuery(con, query3)
+```
+Throughout the course, we will keep adding to this basic template to do more and more complex queries. Also, your first set of tutorials will go further into the SELECT statement and WHERE clause.
+
+When finished, you should always close the connection to the database. It doesn't really matter in our course because we are working with local databases. However, it is a good habit to get into for when you work in the real world. For more information, see https://stackoverflow.com/questions/4111594/why-always-close-database-connection
+```{r}
+dbDisconnect(con) 
+```
+
+
+
+
+
+
+
+
+

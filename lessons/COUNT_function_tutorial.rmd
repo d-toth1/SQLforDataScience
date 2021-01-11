@@ -1,0 +1,48 @@
+---
+title: "COUNT function tutorial"
+output: html_document
+---
+Topics covered: COUNT function
+Preqrequisites: SELECT statment, WHERE Clause
+
+We will again use the Lahman baseball database:
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "lahman.sqlite")
+```
+
+Oftentimes we want to obtain quickly a count of the total number of rows in a data set or a count of the rows meeting a certain condition. For this, we can use the COUNT function. We use COUNT(*) to get the total number of rows (records) in the table. For example, let's count the total number of rows in the Batting table:
+```{r}
+query1 = "SELECT COUNT(*)
+         FROM Batting;"
+dbGetQuery(con, query1)
+```
+Thus, there are 107,429 rows in the Batting data table. 
+
+We can count the number of  player IDs in the Batting data set:
+```{r}
+query2 = "SELECT COUNT(playerID)
+         FROM Batting;"
+dbGetQuery(con, query2)
+```
+We see the number of playerIDs in the table is the same as the number of rows. However, these are not all unique individuals. The vast majority of players have multiple rows. 
+
+We add the DISTINCT keyword to count the number of unique, or distinct players in the Batting table:
+```{r}
+query3 = "SELECT COUNT(DISTINCT playerID)
+         FROM Batting;"
+dbGetQuery(con, query3)
+```
+
+Of course, this can be combined with other SQL clauses. For example, we can quickly see how many players have ever hit more than 60 homeruns in a season:
+```{r}
+query4 = "SELECT COUNT(DISTINCT playerID)
+         FROM Batting
+         WHERE HR >= 60;"
+dbGetQuery(con, query4)
+```
+
+```{r}
+dbDisconnect(con) 
+```
+

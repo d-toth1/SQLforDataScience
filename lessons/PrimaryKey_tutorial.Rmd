@@ -1,0 +1,82 @@
+---
+title: "Primary Key tutorial"
+output: html_document
+---
+
+As I discussed previously, this course is intended for ACMS undergraduate students. In other words, this course aims to teach fundamental data base queries to individuals whose specialty is applied math and statistics who aim to be data scientists/analysts. Thus, this course is not intended to teach database design--that would be the realm of a data engineer, perhaps with a CS degree. However, there is some fundamental terminology that you should know: "primary keys", and to a lesser extent, "foreign keys". 
+
+Oftentimes, a table has a primary key. A primary key is a column that uniquely identifies each row in the table. In other words, a primary key is a variable that has a unique value for each row in the table. For example, imagine a database table with 1,000 rows, and each row contains the medical information of a different person. Thus, there are records for 1,000 people in the table. Then, and ID variable would be defined such that the person in the first row has ID 0001, the second row has ID 0002, and so on. Then, the variable ID would be the primary key.
+
+This is not a difficult concept, but things will get a bit more complicated later on. Let's look at some real data. The nycflights library contains several data frames other than the flights data we have already seen, including "planes". We will create a data base with the flights and airlines tables as data bases:
+```{r}
+library(nycflights13)
+library(RSQLite)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "flights", flights)
+dbWriteTable(con,"planes", planes)
+```
+
+Let's take a look at the planes table:
+```{r}
+query1 <- "SELECT *
+           FROM planes"
+dbGetQuery(con, query1)
+```
+We see there are 3,322 rows in the planes table. Glancing through the columns, it appears the column tailnum is an ID variable. This could be a primary key, but we don't want to search manually through all the rows, of course. So, a quick way to verify that tailnum is a primary key is to count its distinct values:
+```{r}
+query2 <- "SELECT COUNT(DISTINCT tailnum)
+           FROM planes"
+dbGetQuery(con, query2)
+```
+The number of uniqe tailnum values is 3,322, the same as the number of rows. Thus, tailnum uniquely identifies each and thus row is a primary key. 
+Next, note that tailnum is a column in the flights table:
+```{r}
+dbListFields(con, "flights")
+```
+In the flights table, tailnum is referred to as a "foreign key", because it appears in the flights table where it matches each flight to a unique plane. These examples are taken from R for Data Science by Hadley Wickham, available here: https://r4ds.had.co.nz/relational-data.html#keys
+The code examples are done in R, not SQL, but there is a lot of information about the structure of the tables in the nycflights13 data.
+
+##########################################################################################
+
+Moving on, let's look at another example: the Batting and People tables in the Lahman baseball database.
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "lahmansbaseballdb.sqlite")
+```
+
+To start, let's see how many rows are in the People table:
+```{r}
+query5 <- "SELECT COUNT(*) 
+           FROM People"
+dbGetQuery(con, query5)
+```
+Looking at the columns for the People table, it appears that playerID is a plausible primary key. We confirm by counting the unique playerID values:
+```{r}
+query6 <- "SELECT COUNT(DISTINCT playerID) 
+           FROM People"
+dbGetQuery(con, query6)
+```
+Since the total number of rows in the People table is the same as the number of DISTINCT playerID values, playerID is the primary key for the People table.
+
+Now, let's move on to the Batting table. Is player ID a primary key in the Batting table? We run two more queries:
+```{r}
+query7 <- "SELECT COUNT(*)
+           FROM Batting"
+dbGetQuery(con, query7)
+```
+```{r}
+query8 <- "SELECT COUNT(DISTINCT playerID)
+           FROM Batting"
+dbGetQuery(con, query8)
+```
+We see there are far more rows in the Batting table than there are playerID values. This is because each season for a given player has its own row. Thus, playerID is NOT a primary key for the Batting table; rather, it is a foreign key.
+
+Then, we'll look at what columns are in the table:
+```{r}
+dbListFields(con, "Batting")
+```
+Which field could be the primary key? You'll answer that in the practice problems.
+
+
+
+

@@ -1,0 +1,70 @@
+---
+title: "Lab1_Instructions"
+author: "AH"
+date: "1/5/2021"
+output: html_document
+---
+```{r}
+library(RSQLite)
+```
+
+This lab will show you how to create a database from existing CSV files and add rows to tables. Specifically, I am going to create a database from my Middle Earth csv files. First, I create a connection. I name the database MiddleEarth. If it does not exist in folder, then an empty database will be created.
+```{r}
+con <- dbConnect(SQLite(), "MiddeEarth.sqlite")
+```
+
+Now, I want to add tables to my empty database. The tables will be created from the csv files. The MiddleEarth_Peoples.csv file will create the 
+```{r}
+dbWriteTable(conn = con, name = "Peoples", value = "MiddleEarth_Peoples.csv", row.names = FALSE, header = TRUE, overwrite = T)
+dbWriteTable(conn = con, name = "Weapons", value = "MiddleEarth_Weapons.csv", row.names = FALSE, header = TRUE, overwrite = T)
+dbWriteTable(conn = con, name = "Characters", value = "MiddleEarth_Characters.csv", row.names = FALSE, header = TRUE, overwrite = T)
+```
+
+As we did last time, we can list the tables and verify if they were read in correctly.
+```{r}
+dbListTables(con)                 
+```
+Then, we can list the fields for each table:
+```{r}
+dbListFields(con, "Peoples")         
+dbListFields(con, "Weapons")         
+dbListFields(con, "Characters")        
+```
+Alternately, we can use the dbReadTable() funciton to display the data table:
+```{r}
+dbReadTable(con, "Characters")         
+dbReadTable(con, "Peoples")         
+dbReadTable(con, "Weapons")         
+```
+(We see there is a trailing "\r" on the rightmost column of each table. This is something that happens with csv files, but I don't know the details or how to get rid of it. Maybe one of you can figure it out!)
+
+Now, suppose we want to add another row to the Peoples table. I forgot to include Orcs, which are also known as Goblins, and are mortal. We can include them with the code below. We use the INSERT INTO statement, and specify the table. Then, the first set of parentheses are the fields, and the ?'s take the values in the list:
+```{r}
+dbSendQuery(con, 'INSERT INTO Peoples (Name, AlternateName, Mortal) VALUES (?, ?, ?);', list('Orc', 'Goblin', 'Yes\r'))
+```
+
+Let's see if it worked:
+```{r}
+dbReadTable(con, "Peoples")         
+```
+Of course, in the real world, you can probably imagine a scenario in which you would want to insert a very large number of rows, and you would not do each one manually. Other SQL implementations in other software would have the ability to do batch inserts, but this is not available in RSQLite. However, this suffices to illustrate the general idea of INSERT INTO. 
+
+Now that the data set is set up, we can have some fun and practice some of the query skills we have learned so far. For example, let's write a query to get from the Peoples table all the inhabitants of Middle Earth who are mortal:
+```{r}
+query1 = "SELECT *
+         FROM Peoples
+         WHERE Mortal = 'Yes\r'";
+dbGetQuery(con, query1)
+```
+
+
+```{r}
+dbDisconnect(con) 
+```
+
+
+
+
+
+
+

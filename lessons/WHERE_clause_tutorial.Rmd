@@ -1,0 +1,77 @@
+---
+title: "WHERE clause Tutorial"
+output: html_document
+---
+
+Topics covered: WHERE clause
+Preqrequisites: SELECT statment, ORDER BY clause
+
+The WHERE clause allows you to pick certain rows from the table that satisfy a certain condition, or conditions. Using the WHERE clause is oftentimes referred to as "filtering." 
+The template for the WHERE clause is here:
+
+SELECT <what>
+FROM <source>
+WHERE <conditions>
+ORDER BY <column(s)> <order>
+
+Of course, we don't need to use the ORDER BY clause for any subsequent statistical analysis. But, using it is convenient when we are viewing the results of a query. Once again, we will demonstrate with the Lahman baseball database:
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "lahmansbaseballdb.sqlite")
+```
+
+We will explore the batting statistics for the Chicago Cubs. Thus, we will work with the Batting table. In the Batting table, the teams are identified using the teamID column. The Chicago Cubs have a teamID value of "CHN". We can filter the rows to just the Chicago Cubs by using the WHERE clause:
+```{r}
+query1 <- "SELECT *
+           FROM Batting
+           WHERE teamID = 'CHN'
+           ORDER BY HR"
+dbGetQuery(con, query1)
+```
+Note the use of the single quotes in the query definition. 
+
+Now, we can filter on multiple conditions by using the AND operator to get batting records for the Chicago Cubs in 2019 for players having at least 100 at bats:
+```{r}
+query2 <- "SELECT *
+           FROM Batting
+           WHERE yearID = 2019 AND teamID = 'CHN' AND AB >= 100
+           ORDER BY HR DESC"
+dbGetQuery(con, query2)
+```
+
+What if we wanted batting records from 2018 and 2019? Then we use the OR operator with the yearID variable:
+```{r}
+query3 <- "SELECT *
+           FROM Batting
+           WHERE (yearID = 2019 OR yearID = 2018) AND teamID = 'CHN' AND AB >= 100
+           ORDER BY HR DESC"
+dbGetQuery(con, query3)
+```
+(What happens if we run the query without the parentheses? Try it and find out.)
+
+There are all sorts of ways to filter results. There WHERE statment uses "predicates" to facilitate filtering. For example, the BETWEEN predicate can be used if we want to find the batting records for the Cubs for years 2017 - 2019: 
+```{r}
+query4 <- "SELECT *
+           FROM Batting
+           WHERE (yearID BETWEEN 2017 and 2019) AND teamID = 'CHN' AND AB >= 100
+           ORDER BY HR DESC"
+dbGetQuery(con, query4)
+```
+Note, in SQL BETWEEN is inclusive. Of course, in the above query, we could have used two OR operators. But, you would not want to do this for a wide range of years.
+
+For one more example of a predicate, the IN predicate can be used in filter on several teams at once. For example, the query below returns rows from the Batting table for the 2019 season for players on Milwaukee Brewers, Minnesota Twins, and Chicago Cubs (yep, I'm sticking with the midwest) that have at least 100 at bats:
+```{r}
+query5 <- "SELECT *
+           FROM Batting
+           WHERE yearID = 2019 AND teamID IN ('MIL', 'MIN', 'CHN') AND AB >= 100
+           ORDER BY HR DESC"
+dbGetQuery(con, query5)
+```
+
+
+There are more predicates that can be used with the WHERE clause, and we will see some of them in future tutorials. Here is some information if you wish to take a look: https://docs.microsoft.com/en-us/sql/t-sql/queries/predicates?view=sql-server-ver15
+
+```{r}
+dbDisconnect(con) 
+```
+

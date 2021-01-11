@@ -1,0 +1,58 @@
+---
+title: "JOINs_Intro_Tutorial"
+output: html_document
+---
+
+In order to introduce the topic of joins, I created a silly example: a Star Wars database (in the Data folder on Sakai) with two tables, one for characters' species and one for the vehicles they drive (or are associated with):
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "StarWars.sqlite")
+dbListTables(con)
+```
+
+I purposely made the tables small, to make the following examples intuitive. Take a look at both tables:
+```{r}
+query1 = "SELECT *
+         FROM Species;"
+dbGetQuery(con, query1)
+```
+
+```{r}
+query2 = "SELECT *
+         FROM Vehicles;"
+dbGetQuery(con, query2)
+```
+Note, the Species tabel has 9 rows, while the Vehicles table has 8 rows. However, only the first 7 rows are the same in both tables.
+
+Now, suppose we want to create a table containing both the species and vehicle information for each character. (Again, this is a silly example, but the goal is a very common task for data analysis.) Thus, we want to "join" the tables. This may sound easy enough, but there are different types of joins that combine, or merge, the data according to different logic. We start out with the INNER JOIN, the most common type of join. Here is the template for an INNER JOIN:
+
+SELECT <what>
+FROM <source (1st Table)>
+INNER JOIN <source (2nd Table)> ON <condition>
+WHERE <conditions>
+ORDER BY <column(s)> <order>
+
+The WHERE and ORDER BY clauses are optional. Let's try an example with just the essentials, i.e. SELECT, FROM, and INNER JOIN. The following code joins the Species and Vehicles tables. We are joining on the Name variable. Note, since both tables have a column called Name, we must use refer to the table and column, i.e. "Species.Name" and "Vehicles.Name": 
+```{r}
+query1 <- "SELECT Species.Name, Species, Vehicle 
+           FROM Species
+           INNER JOIN Vehicles ON Species.Name = Vehicles.Name"
+dbGetQuery(con, query1)
+```
+How many rows were returned for this query? Seven rows, i.e. the seven rows that were common to both tables. Thus, an INNER JOIN merges the tables such that rows NOT in both tables are discarded.
+
+
+Now, let's look at a second type of join. A LEFT JOIN keeps all the rows from the first table (i.e. here, Species) even if some NAs result. In the following example, Species is the first data set, so all nine rows are included in the query, even if the Vehicle values are NA for Ahsoka Tano and Darth Maul:
+```{r}
+query2 <- "SELECT Species.Name, Species, Vehicle 
+           FROM Species
+           LEFT JOIN Vehicles ON Species.Name = Vehicles.Name"
+dbGetQuery(con, query2)
+
+```
+
+Different software program define different types of joins. We are using SQLite, a particular implementation of SQL. There are fewer types of joins available in SQLite than in other versions of SQL as well as other programs (e.g. dplyr in R). However, this really isn't a problem, as the inner join is the most common type of join, by far, followed by a left join. (In my experience, I've only ever used an inner join in practice). There are many resources to help visualize the logic of joins. Here are a few:
+https://sql-joins.leopard.in.ua/
+https://blog.codinghorror.com/a-visual-explanation-of-sql-joins/
+https://www.sqlitetutorial.net/sqlite-join/
+

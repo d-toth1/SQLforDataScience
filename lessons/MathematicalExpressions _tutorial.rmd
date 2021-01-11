@@ -1,0 +1,71 @@
+---
+title: "Mathematical Expressions tutorial"
+output: html_document
+---
+Topics: Mathematical expressions
+Prerequisites: SELECT statement
+
+Let's use the NYC flights data to illustrate the following concepts. Recall, we will load the data frame from the nycflights13 library and then write it to a data table:
+```{r}
+library(RSQLite)
+library(nycflights13)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "flights", flights)
+```
+
+We can perform mathematical operations on existing columns to create new columns. We specify the definition of the new column in the SELECT statement and name it using AS. For a first example, let's consider seven columns from the data table: flight, origin, dest, distance, and air_time, arr_delay, and dep_delay:
+```{r}
+query1 <- "SELECT flight, origin, dest, distance, air_time, arr_delay, dep_delay
+           FROM flights"
+dbGetQuery(con, query1)
+```
+
+Let's define a new variable "gain", which is the difference between the arrival delay and departure delay. We specify the formula in the SELECT statement and name the new variable gain:
+```{r}
+query2 <- "SELECT flight, origin, dest, distance, air_time, arr_delay, dep_delay, arr_delay - dep_delay AS gain
+           FROM flights"
+dbGetQuery(con, query2)
+```
+
+Now, suppose we are interested in calculating the speed of each flight in mile per hour (mph), where speed = (distance/airtime)*60. We specify the formula in the SELECT statement and name the new variable mph:
+```{r}
+query3 <- "SELECT flight, origin, dest, distance, air_time, arr_delay, dep_delay, (distance/air_time)*60 AS mph
+           FROM flights"
+dbGetQuery(con, query3)
+```
+
+We can create both variables in the same query:
+```{r}
+query4 <- "SELECT flight, origin, dest, distance, air_time, arr_delay, dep_delay, 
+                  arr_delay - dep_delay AS gain, 
+                 (distance/air_time)*60 AS mph
+           FROM flights"
+dbGetQuery(con, query4)
+```
+
+Note that the mph variable was created with 4 decimals. This brings us to the topic of numeric data types in SQL. The original variables were integers, but decimals were returned. You can see all the numeric data types and others here: https://www.sqlshack.com/learn-sql-sql-data-types/
+We can control the number of decimal places by wrapping the entire definition of the speed variable into the ROUND() function. For example, here we create a new variable speed with two decimals.
+```{r}
+query5 <- "SELECT flight, origin, dest, distance, air_time, arr_delay, dep_delay, 
+                  arr_delay - dep_delay AS gain, 
+                  ROUND((distance/air_time)*60, 2) AS mph
+           FROM flights"
+dbGetQuery(con, query5)
+```
+
+We can also control the data type of the new variable using the CAST() function. For example, we can specify that the new variable speed to be an integer:
+```{r}
+query6 <- "SELECT flight, origin, dest, distance, air_time, arr_delay, dep_delay, 
+                  arr_delay - dep_delay AS gain, 
+                  CAST((distance/air_time)*60 AS int) AS mph
+           FROM flights"
+dbGetQuery(con, query6)
+```
+Note, the when we cast mph as an integer, the decimal portion is truncated, not rounded (i.e. a floor function is applied).
+
+```{r}
+dbDisconnect(con) 
+```
+
+
+

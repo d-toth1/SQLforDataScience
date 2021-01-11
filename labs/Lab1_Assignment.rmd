@@ -1,0 +1,61 @@
+---
+title: "ACMS 34617 Lab1_Assignment"
+output: html_document
+---
+
+Name: David Toth
+
+After working through the Lab1_CreateDatabase file, complete the following. The deliverable for Lab1 is the "knitted" version of your filled-in R Markdown file.
+
+1. Show the code used to create your database and add the tables.
+```{r}
+setwd("/Users/davidtoth/acms36417/")
+library(RSQLite)
+
+con <- dbConnect(SQLite(), "PeopleSnacks.sqlite")
+
+dbWriteTable(conn = con, name = "People", value = "Toth_DB1 - Sheet1.csv", 
+             row.names = FALSE, header = TRUE, overwrite = T)
+dbWriteTable(conn = con, name = "CharacInfo", value = "Toth_DB2 - Sheet1.csv", 
+             row.names = FALSE, header = TRUE, overwrite = T)
+dbWriteTable(conn = con, name = "SnackInfo", value = "Toth_DB3 - Sheet1.csv", 
+             row.names = FALSE, header = TRUE, overwrite = T)
+```
+
+2. Use the dbReadTable() function to display your tables.
+```{r}
+dbReadTable(con, "People")
+dbReadTable(con, "CharacInfo")
+dbReadTable(con, "SnackInfo")
+```
+
+3. For each table report the primary key and foreign key (if there is one).
+
+People: Primary = ID, Foreign = Name
+CharacInfo: Primary = Name
+SnackInfo: Primary = Snack
+
+4. For one table, add an additional row with the INSERT INTO statement. Display the new table using the dbReadTable() function.
+```{r}
+dbSendQuery(con, 'INSERT INTO People (ID, Name, FavoriteSnack) VALUES (?, ?, ?);', 
+            list(5, 'Sassy Justice', 'Cake\r'))
+dbReadTable(con, "People")
+```
+
+5. Write three of your own queries to practice the SELECT and WHERE skills you have learned so far (or, anything you have learned on your own if you wish to show off :)
+
+```{r}
+query1 = "select * from People where (ID % 2 = 0) ";
+dbGetQuery(con, query1)
+```
+
+```{r}
+query2 = "select * from CharacInfo where HairColor = 'Brown'";
+dbGetQuery(con, query2)
+```
+
+```{r}
+query3 = "select count(distinct HairColor) from CharacInfo";
+dbGetQuery(con, query3)
+```
+

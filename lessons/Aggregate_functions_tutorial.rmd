@@ -1,0 +1,67 @@
+---
+title: "Aggregate functions tutorial"
+output: html_document
+---
+Topics covered: Aggregate functions, i.e. SUM(), MIN(), MAX(), AVG(), GROUP BY clause, AS clause 
+Preqrequisites: SELECT statment, WHERE Clause
+
+In a previous tutorial, we learned how to use the COUNT() function to count the number of rows in a table or the number of rows returned by a query. That was simple enough, but now we will see that the COUNT() function is one of several aggregate functions, including MIN(), MAX(), SUM(), and AVG(). Also, these can be made much more powerful when used with the GROUP_BY clause. There are many interesting applications when we consider the salaries of the players in the Lahman baseball database: 
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "lahmansbaseballdb.sqlite")
+```
+
+A quick first example is obtaining the largest single-season salary on record:
+```{r}
+query1 = "SELECT playerID, yearID, MAX(salary)
+         FROM Salaries"
+dbGetQuery(con, query1)
+```
+Of course, we could also do a similar query using the MIN() function.
+
+What was the total salary on the San Diego Padres (teamID = 'SDN') in 2016? We refer to this total as the "payroll" for a given team in a given year.
+```{r}
+query2 = "SELECT SUM(salary)
+         FROM Salaries
+         WHERE yearID = 2016 AND teamID = 'SDN'";
+dbGetQuery(con, query2)
+```
+
+In sports nowadays, there is much interest in performing analyses to determine how effective or efficient a team's finances are, e.g. are they winning a lot of games for the amount of money they are spending on player salaries. Thus, we would like to calculate the payroll for all teams in a given year. In the previous problem we specificed a single team, but how can we easily calculate the payroll for all teams in 2016? We can do this using the GROUP_BY clause. This clause allows you to apply aggregate functions over groups in a data set. Furthermore, we name the new variable "payroll" by using the AS clause:
+```{r}
+query3 = "SELECT teamID, SUM(salary) AS payroll
+         FROM Salaries
+         WHERE yearID = 2016
+         GROUP BY teamID
+         ORDER BY payroll";
+dbGetQuery(con, query3)
+```
+
+
+Next, we may wish to filter the results after using the GROUP_BY clause. We do this by using the HAVING clause. It is similar to the WHERE clause, but the HAVING clause is used after grouping. For example, suppose I want to compute the 2016 payrolls, but this time I only want to obtain the teams with a payroll greater than $150,000,000. Then, we sort in descencing order by payroll:
+```{r}
+query4 = "SELECT teamID, SUM(salary) as payroll
+         FROM Salaries
+         WHERE yearID = 2016
+         GROUP BY teamID
+         HAVING payroll > 150000000
+         ORDER BY payroll DESC";
+dbGetQuery(con, query4)
+```
+
+We can also compute multiple summary statistics by using multiple functions. For example, we can compute the highest and lowest salary on each team, named MaxSal and MinSal, respectively:
+```{r}
+query5 = "SELECT teamID, MIN(salary) AS MinSal, MAX(salary) AS MaxSal
+         FROM Salaries
+         WHERE yearID = 2016
+         GROUP BY teamID
+         ORDER BY teamID";
+dbGetQuery(con, query5)
+```
+
+
+```{r}
+dbDisconnect(con) 
+```
+
+

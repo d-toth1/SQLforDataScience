@@ -1,0 +1,69 @@
+---
+title: "Joins tutorial"
+output: html_document
+---
+#Example 1: Flights and carriers data
+We have seen nycflights13 library contains several realated data tables. We access the nycflights13 data and create a database with two tables, the flights and airlines:
+```{r}
+library(RSQLite)
+library(nycflights13)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "flights", flights)
+dbWriteTable(con,"airlines", airlines)
+```
+You should explore the airlines table a bit on your own, as we have not used it much (if at all). See the relations between the data tables here: https://r4ds.had.co.nz/relational-data.html#nycflights13-relational
+Note, the flights and airlines tables are linked by the carrier column. 
+
+Imagine you want to add the full airline name to the flights. You would simply do an INNER JOIN to join the two tables on the carrier column:
+```{r}
+query1 <- "SELECT flights.carrier, name, flight, tailnum, origin, dest 
+           FROM flights
+           INNER JOIN airlines
+           ON flights.carrier = airlines.carrier"
+dbGetQuery(con, query1)
+```
+Now, we have flight information such as origin, destination, etc. in a table along with the full airline name rather than just the carrier abbreviation (e.g. JetBlue Airways rather than just B6).
+Note, in the above, the carrier column was common to both tables, so we needed to use the table name when specifying it, i.e. "flights.carrier" and "airlines.carrier". (Try running the query with just "carrier" and see what happens.
+
+```{r}
+dbDisconnect(con) 
+```
+
+#Example 2: Best Single season Home Run Hitters
+The second example comes from the Lahman database:
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "lahmansbaseballdb.sqlite")
+```
+
+We can quickly see how many players have ever hit more than 60 homeruns in a season:
+```{r}
+query3 = "SELECT COUNT(DISTINCT playerID)
+         FROM Batting
+         WHERE HR >= 60;"
+dbGetQuery(con, query3)
+```
+We see there are 5 players who have hit 60 or more homeruns in a season. (Baseball fans should be able to name a couple of them.) It would be nice to do a query in which their names are also returned. However, the player names are not in the Batting table, only the playerIDs are included. The first and last name is in the People table. So, we can link, or join, the two tables on the variable that is common to both, playerID.
+
+```{r}
+query4 = "SELECT nameLast, nameFirst, HR, yearID
+          FROM Batting 
+          INNER JOIN People ON Batting.playerID = People.playerID
+          WHERE HR >= 60
+          ORDER BY HR DESC";
+dbGetQuery(con, query4)
+```
+Note, in the above query, the playerID variable is common to tables, so we must use the table also, i.e. we needed to do "Batting.playerID" and "People.playerID" rather than just "playerID". The other variables are only in one table or the other, so, we don't need to specify the table. If we want to be very clear, we can choose to do so, and the same result is returned:
+```{r}
+query5 = "SELECT People.nameLast, People.nameFirst, Batting.HR, Batting.yearID
+          FROM Batting 
+          INNER JOIN People ON Batting.playerID = People.playerID
+          WHERE (Batting.HR) >= 60
+          ORDER BY Batting.HR DESC";
+dbGetQuery(con, query5)
+```
+
+```{r}
+dbDisconnect(con) 
+```
+
