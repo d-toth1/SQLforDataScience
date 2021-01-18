@@ -1,0 +1,34 @@
+---
+title: "Subqueries_practice"
+author: "AH"
+date: "1/10/2021"
+output: html_document
+---
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "../data/lahmansbaseballdb.sqlite")
+```
+
+
+1. Write a query that provides the average on base percentage (OBP) for each team in 1980. What is the value of the lowest team average OBP? (You'll need to refer to Lab2 for the formula for OBP.) Round your answer to 3 decimals. 
+```{r}
+query1 <- "select teamID, avg(1.0*(H+BB+HBP)/(AB+BB+HBP+SF)) as avgOBP
+from batting
+where yearID = 1980
+group by teamID
+order by avgOBP
+" 
+dbGetQuery(con, query1)
+```
+
+
+2. Refer to the HomeGames table. Write a query to obtain the National League teams (leaguekey = 'NL') in 2015 whose attendance as below the average for the NL in that year. How many rows are returned for your query?
+```{r}
+query2 <- "select team_ID, attendance
+from HomeGames
+where leaguekey = 'NL' and yearkey = 2015 and 
+  attendance < (select avg(attendance) from HomeGames 
+              where leaguekey = 'NL' and yearkey = 2015
+              )" 
+dbGetQuery(con, query2)
+```

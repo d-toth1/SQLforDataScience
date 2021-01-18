@@ -1,0 +1,71 @@
+---
+title: "Lab 2 Assignment"
+output: html_document
+---
+For Lab2, your deliverable will be the knitted html file. At the end of your queries for items 1 and 2, use the clause "LIMIT 5" when preparing your submission. This will cause only 5 rows to be printed, which will make the knitted files much easier to look at.
+Load the Lahman baseball database and relevant R packages:
+```{r}
+library(RSQLite)
+library(tidyverse)
+con <- dbConnect(SQLite(), "../data/lahmansbaseballdb.sqlite")
+```
+
+1. Refer to the Batting table of the Lahman baseball databse. Which player has the most total runs batted in (RBI) since 2012? (Your answer should be the playerID.) How many players have at least 500 total RBI since 2012?
+```{r}
+query1 <- "select playerID, sum(RBI) 
+from Batting 
+where yearID >= 2012 
+group by playerID 
+having sum(RBI) >= 500
+order by sum(RBI) desc";
+head(dbGetQuery(con, query1), 10)
+```
+encared01 has the most RBIs since 2012. 
+60 players have at least 500 RBIs since 2012. 
+
+
+2. Again, refer to the Batting table. Calculate the statistic "on base percentage" and give it the name "OBP". The formula for OBP is 
+(H+BB+HBP)/(AB+BB+HBP+SF)
+Then, find the playerID with the largest OBP in 1990. Only consider players with at least 100 at bats (AB).
+[Note: when creating the OBP variable, you'll need to multiply the expression by 1.0. (Not 1; specifically 1.0) We'll discuss why later. To explore a bit, see what happens when you do neglect to do so.]
+```{r}
+query2 <- "select playerID, 1.0*(H+BB+HBP)/(AB+BB+HBP+SF) as OBP
+from Batting
+where yearID = 1990
+group by playerID
+having AB >= 100
+order by OBP desc" 
+head(dbGetQuery(con, query2), 10)
+```
+The player with the highest OBP in 1990 is thomafr04.
+
+
+3. Anabolic steroids are used by many professional athletes. For baseball hitters, it is generally agreed that steroid use can result in more home runs, as they produce stronger athletes who hit the ball farther and harder. The "Steroid Era" in baseball was a time when steroid use was rampant among players. At least one former player said that around 80% of baseball players were using the drugs during this time. There is no exact beginning or end to the Steroid Era, but most agree it occured in the late 1980's to late 2000's. Does the data show anything for this time? Specifically, do we see more home runs during this time than in others?
+
+We will make a plot with time (i.e. yearID) on the x-axis and HRs per year on the y-axis. However, the number of teams in the league increase over time. For example, in 1940 there were only 16 teams, while there were 30 teams by 1998. To correct for this, we can create a rate variable: for each year's HR total, we can divide by the total number of players in the league.
+
+Specifically, refer to the Teams table. Write a query that groups by yearID. Then, calculate the total HR per year divided by the number of teams in the league that year. (You'll need to multiply by 1.0 again, as in the previous item.) Include years 1940 to 2019. Take a look at the results, then save the results of the query as a dataframe in R:
+```{r}
+query3 <- "select yearID, 1.0*sum(HR)/count(distinct teamID) as rate
+from Teams
+where yearID between 1940 and 2019
+group by yearID
+order by rate desc" 
+df3 <- dbGetQuery(con, query3)
+head(df3, 10)
+```
+
+Now, fill in the parts with *** to create the plot shown in the slides.
+```{r}
+ggplot(df3, aes(x = yearID, y = rate)) +
+              geom_line() +
+              scale_x_continuous(breaks = seq(1940, 2019, 5)) +
+              ggtitle("Visualization of the 'Steroid Era'") +
+              xlab("Year") + ylab("Home Runs / # of Teams")
+```
+Hint: In scale_x_continuous, you need to create a sequence of years, starting at 1940 and ending at 2019, incremented by 5.
+
+There appears to be an increase in home runs between the late 1980s to the late 2000s compared to pre-1980 levels. However, more recent years have seen an increase in home run rates despite not being included in the Steroid Era. 
+
+
+

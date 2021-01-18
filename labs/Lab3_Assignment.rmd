@@ -1,0 +1,72 @@
+---
+title: "Lab 3 Assignment"
+output: html_document
+---
+In this lab, you will use a JOIN to merge two data tables in the Lahman baseball database, use the resulting data to create a visualization, and perform a basic linear regression. The first two items below are warm ups. You will perform the JOIN in item 3, and then the subsequent items deal with the visualization and regression.
+
+As usual, we wil start by connecting to the data base and loading the necessary packages:
+```{r}
+library(tidyverse)
+library(RSQLite)
+con <- dbConnect(SQLite(), "../data/lahmansbaseballdb.sqlite")
+```
+
+1. In a previous tutorial, we obtained the team payrolls for 2016. Warm up by recreating that query for practice. Specifically, using the Salaries table, write a query to compute the total payroll (i.e. sum of salaries) for each team in 2016. What is the value of the largest payroll?
+```{r}
+query1 = "select teamID, sum(salary) as payroll
+from salaries
+where yearID = 2016
+group by teamID
+order by payroll desc";
+dbGetQuery(con, query1)
+```
+
+2. Now, for a second warm up, compute team winning percentage (i.e. wins divided by games, or W/G) for 2016. We will need the Teams table for this. Label the winning percentage as WinPct, and round it to three decimals. What is the largest value of WinPct?
+```{r}
+query2 = "select teamID, round(1.0*W/G,3) as WinPct 
+from Teams 
+where yearID = 2016
+order by WinPct desc";
+dbGetQuery(con, query2)          
+```
+
+3. Now, rather than having two separate queries as in items 1 and 2, use a JOIN to merge the results into a single data frame. Specifically, we want to return three columns: teamID, WinPct, and payroll for 2016. 
+```{r}
+query3 = "select Salaries.teamID, sum(salary) as payroll, round(1.0*W/G, 3) as WinPct
+from Salaries
+inner join Teams on Salaries.teamID = Teams.teamID
+where Salaries.yearID = 2016 and Teams.yearID = 2016
+group by Salaries.teamID";
+dbGetQuery(con, query3)     
+```
+Once you are happy with your query, save it as a data frame:
+```{r}
+df3 <- dbGetQuery(con, query3) 
+```
+
+4. Create the plot shown in the slides by filling in the ***. (If you wish, play around with the options in geom_text() to get the appearance of the team codes better than mine: https://ggplot2.tidyverse.org/reference/geom_text.html)
+```{r}
+library(ggplot2)
+ggplot(df3, aes(x = payroll, y = WinPct)) +
+  geom_point() +
+  geom_text(aes(label = teamID), hjust = -.1, vjust = 0)
+```
+
+5. Perform a linear regression predicting WinPct from payroll. Report and interpret the coefficient of multiple determination, R^2.
+```{r}
+mod <- lm(WinPct ~ payroll, data = df3)
+summary(mod)
+```
+** Interpretation: Payroll explains about 40% of the variance in the values of win percentage.
+
+(Note: if you are an aspiring data scientist, you should be able to explain verbally and with sketches pretty much every single quantity in the linear model summary. If you are looking at data science jobs and you cannot do this, then you should do your own review/self study. I would be more than happy to talk it over with you, if you wish.)
+
+6. Create a diagnostic plot, i.e. model fitted values on the x axis and model residuals on the y axis. You can do this with the plot() function in base R, or you can do this in ggplot(). Using ggplot() requires a data frame, so you will need to put the fitted values and residuals into a data frame first. Either way, the axes should be labeled with "Fitted values" and "Residuals". Write one sentence about what the plot says about the model.
+```{r}
+plot(mod$fitted.values, mod$residuals, xlab = "Fitted Values", 
+     ylab = "Residuals")
+```
+** The diagnostic plot shows that the residuals are non-constant and dependent (there is some oscillating pattern), and therefore the assumption of homoskedasticity might be invalid.**
+```{r}
+dbDisconnect(con)
+```

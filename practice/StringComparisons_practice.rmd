@@ -1,0 +1,108 @@
+---
+title: "String comparison practice"
+output: html_document
+---
+
+For these practice items, refer to the NBA_season1718_salary table in the nba_salary database:
+```{r}
+library(RSQLite)
+con <- dbConnect(SQLite(), "~/SQLforDataScience/data/nba_salary.sqlite")
+dbListFields(con, "NBA_season1718_salary")
+```
+
+1. Some of the players in the table are listed more than once because they played on different teams. How many distinct player names are in the table? (You'll need to complete the subsequent items using only the set of distinct names.)
+```{r}
+query1 <- "select count(distinct Player)
+from NBA_season1718_salary"
+dbGetQuery(con, query1)
+```
+
+2. How many players have the letters "ill" occuring anywhere in their name?
+```{r}
+query2 <- "select count(distinct Player) 
+from NBA_season1718_salary
+where Player like '%ill%'
+"
+dbGetQuery(con, query2)
+```
+
+3. How many players last name ends with "son" (with any number of preceding letters)?
+```{r}
+query3 <- "select count(distinct Player)
+from NBA_season1718_salary
+where Player like '%son'
+"
+dbGetQuery(con, query3)
+```
+
+4. How many players last name ends with "son", where their full name (first and last) has 11 characters total? (In total characters, include the space between first and last name and periods for initials. For example, "C.J. Watson" fits these criteria.)
+```{r}
+query4 <- "select count(distinct Player)
+from NBA_season1718_salary
+where Player like '________son'
+"
+dbGetQuery(con, query4)
+```
+
+5. How many players have last names end with "son", and the last names have exactly 6 letters (including "son")? (For example, "Gibson" is a last name fitting these criteria).
+```{r}
+query5 <- "select count(distinct Player)
+from NBA_season1718_salary
+where Player like '% ___son'
+"
+dbGetQuery(con, query5)
+```
+
+6. How many players have first names starting with "Ja"? (Note, this version of SQL is not case sensitive.)
+```{r}
+query6 <- "select count(distinct Player)
+from NBA_season1718_salary
+where Player like 'Ja%'
+"
+dbGetQuery(con, query6)
+```
+
+7. How many players have first names starting with "Ja" and the first name has 6 letters total? 
+```{r}
+query7 <- "select count(distinct Player)
+from NBA_season1718_salary
+where Player like 'Ja%' and Player like 'Ja____ %'
+"
+dbGetQuery(con, query7)
+```
+
+8. How many players have first names starting with "J" and last names ending in "l", with any number of letters between? 
+```{r}
+query8 <- "select count(distinct Player)
+from NBA_season1718_salary
+where Player like 'J%l'
+"
+dbGetQuery(con, query8)
+```
+
+
+```{r}
+dbDisconnect(con) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+dbDisconnect(con) 
+```

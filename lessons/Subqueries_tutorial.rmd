@@ -1,0 +1,88 @@
+---
+title: "Subqueries tutorial"
+output: html_document
+---
+Prerequisites: SELECT, WHERE, ORDER BY, aggregate functions
+
+Performing SQL queries usually involves some combination of filtering, aggregating and joining. However, these ideas can be extending and combined in complex ways. One way to extend previous ideas is through the ideas of subqueries. As the name suggests, a subquery is a query nested within another query. We will see two types of subqueries--ones that occur in the SELECT statement, and ones that occur in the WHERE clause.
+
+For these practice problems, we will use the gapminder data in the gapminder library (you must install it first). We also load the usual RSQLite package:
+```{r}
+library(gapminder)
+library(RSQLite)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "gapminder", gapminder)
+```
+
+Suppose we wish to make a list of Asian countries that had a life expectancy greater than the overall average for Asia in 2007. We need (1) to obtain the average for Asia in 2007 and then (2) obtain the list of countries with life expectancy greater than this value. Doing (1) is easy, as we have seen the with the AVG function:
+```{r}
+query1 <- "SELECT AVG(lifeExp)
+           FROM gapminder
+           WHERE continent = 'Asia' AND year = 2007"
+dbGetQuery(con, query1)
+```
+
+But how do we perform both (1) and (2) within the SAME query? The answer is to use a subquery. Our query1 will become a subquery within a new query, query2. Note, the subquery is nested in the WHERE clause. Also, subqueries are always enclosed in parantheses:
+```{r}
+query2 <- "SELECT country, lifeExp
+           FROM gapminder
+           WHERE continent = 'Asia' AND year = 2007 
+                AND lifeExp > (SELECT AVG(lifeExp)
+                               FROM gapminder
+                               WHERE continent = 'Asia' AND year = 2007)
+           ORDER BY lifeExp DESC"
+dbGetQuery(con, query2)
+```
+
+```{r}
+dbDisconnect(con) 
+```
+
+Let's do some more examples using the flights data:
+```{r}
+library(nycflights13)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "flights", flights)
+```
+
+Recall, in a previous tutorial we used mathematical expressions to create new variables such as speed = (distance/airtime)*60 name it mph:
+```{r}
+query3 <- "SELECT carrier, distance, air_time, (distance/air_time)*60 AS mph
+           FROM flights"
+dbGetQuery(con, query3)
+```
+
+Now, suppose we wish to calculate the overall average speed of each carrier. We might try something like this:
+```{r}
+query4 <- "SELECT carrier, distance, air_time, (distance/air_time)*60 AS mph, AVG(mph)
+           FROM flights
+           GROUP BY carrier"
+dbGetQuery(con, query4)
+```
+However, this fails, because SQL does not recognize the new variable mph to calculate its average. So, how do we create a new variable and calculate its average in the SAME query?
+
+Once again, the answer is a subquery. Again, the subquery will be wrapped in parentheses. However, this time the subquery does not appear in the WHERE clause; it appears in the SELECT statement. Note, query3 from above is now the subquery nested within the new query5. SQL executes the subquery first, creatingn an ephermal table. Then, the average mph is computed from this ephermal table:
+```{r}
+query5 <- "SELECT carrier, AVG(mph) as avg_mph
+           FROM (SELECT carrier, origin, dest, distance, air_time, (distance/air_time)*60 AS mph
+                 FROM flights)
+           GROUP BY carrier
+           ORDER BY avg_mph DESC"
+dbGetQuery(con, query5)
+```
+
+```{r}
+dbDisconnect(con) 
+```
+
+
+
+
+
+
+
+
+
+
+
+

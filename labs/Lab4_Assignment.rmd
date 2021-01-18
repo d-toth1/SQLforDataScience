@@ -1,0 +1,55 @@
+---
+title: "Explore NBA data"
+output: html_document
+---
+
+These problems deal with the NBA 2017-2018 data. Connect to the database and take a look at the tables:
+```{r}
+library(RSQLite)
+library(tidyverse)
+con <- dbConnect(SQLite(), "~/SQLforDataScience/data/nba_salary.sqlite")
+dbReadTable(con, "NBA_season1718_salary")
+dbReadTable(con, "Seasons_Stats")
+```
+The problems may seem straightforward, but there are some wrinkles I won’t tell you about upfront. Explore the data first. Talk to your group about it. Check your numerical answer for #1 with me before moving on. Since you just did the subqueries practice, you would be correct in assuming you'll use subqueries for some of the problems. But, you won't use a subquery for all of them.
+
+
+1. Compute the average salary of players in the NBA_season1718_salary table.
+```{r}
+query1 <- "select avg(Salary) as avgSalary 
+from (select sum(season17_18) as Salary
+      from NBA_season1718_salary
+      group by Player)
+"
+dbGetQuery(con, query1)
+```
+2. Make a list of players who made less than the league average salary for 2017-18. Sort the list from greatest to least.
+```{r}
+query2 <- "select Player, sum(season17_18) as Salary
+from NBA_season1718_salary
+group by Player
+having Salary < 6275095
+order by Salary desc"
+head(dbGetQuery(con, query2), 10)
+```
+3. Make a boxplot of salary by position (Pos in the Seasons_Stats table). See the plot in the slides. Of course, you'll need to write a query first to obtain the appropriate data and save as a data frame.
+```{r}
+query3 = "select NBA_season1718_salary.Player, sum(season17_18) as Salary, Pos
+from NBA_season1718_salary
+inner join Seasons_Stats on NBA_season1718_salary.Player = Seasons_Stats.Player
+where (Year between 2017 and 2018) and Pos != 'PF-C'
+group by NBA_season1718_salary.Player
+"
+df3 <- dbGetQuery(con, query3) 
+```
+
+```{r}
+#put code for the plot here
+ggplot(df3, aes(x=Pos, y=Salary)) + 
+  geom_boxplot() + 
+  labs(x="Position", y="Average Salary", title="NBA Average Salary by Position, 2017-2018")
+```
+```{r}
+dbDisconnect(con) 
+```
+
