@@ -1,0 +1,137 @@
+---
+title: "Lab5_assignment"
+output: html_document
+---
+
+This lab consists of practice problems using the "movie" data in the ggplot2movies package and data from the dslabs package. Install those packages if you have not done so already
+
+The first set of problems focuses on the movie data. Run the following code to write the movies data in to a database. The database will have a single table named "movies".
+```{r}
+library(RSQLite)
+library(ggplot2movies)
+library(tidyverse)
+data(movies)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "movies", movies)
+```
+
+1. How many years are included in the table?
+```{r}
+query1 <- "select count(distinct year) from movies"
+dbGetQuery(con, query1)
+```
+
+2. How many movies in the data are from 2005?
+```{r}
+query2 <- "select count(distinct title) from movies where year = 2005"
+dbGetQuery(con, query2)
+```
+
+3. How many movies in the data are from 2005 and are rated R?
+```{r}
+query3 <- "select count(distinct title) from movies where year = 2005 and mpaa = 'R'"
+dbGetQuery(con, query3)
+```
+
+4. How many movies in the data are from the years 2000-2005 and rated PG?
+```{r}
+query4 <- "select count(distinct title) from movies where (year between 2000 and 2005) and mpaa == 'PG'"
+dbGetQuery(con, query4)
+```
+
+
+5. How many movies from the year 2005 reported their budget?
+```{r}
+query5 <- "select count(distinct title) from movies where year = 2005 and budget is not null"
+dbGetQuery(con, query5)
+```
+
+6. What is the average budget for 2005 movies? (Don't include rows with NA for budget.)
+```{r}
+query5 <- "select avg(budget) from movies where year = 2005 and budget is not null"
+dbGetQuery(con, query5)
+```
+
+7. For the years 1995 through 2005, which year had the movies with the highest average rating?
+```{r}
+query5 <- "select year, avg(rating) from movies where year between 1995 and 2005 group by year order by avg(rating) desc"
+dbGetQuery(con, query5)
+```
+
+
+8. For the years 1945 through 2005, how many years had average ratings less than 5.6? Limit your query to movies at least 70 minutes long. 
+```{r}
+query8 <- "select * from (select year, avg(rating) as avgRating from movies where length >= 70 group by year) where avgRating < 5.6 and (year between 1945 and 2005)"
+dbGetQuery(con, query8)
+```
+
+
+9. How many movies have the word "dark" somewhere (anywhere) in the title?
+```{r}
+query9 <- "select count(title) from movies where title like '%dark%'"
+dbGetQuery(con, query9)
+```
+
+
+10. How many movies have titles that begin with the word "dark" (ignoring words such as "a" or "the") ?
+```{r}
+query10 <- "select count(title) from movies where title like 'dark%'"
+dbGetQuery(con, query10)
+```
+
+11. How many movies have titles that are exactly 5 characters long? (This includes numbers, spaces, and symbols such as &, :, /, and so on)
+```{r}
+query11 <- "select count(title) from movies where title like '_____'"
+dbGetQuery(con, query11)
+```
+
+
+12. How many movies in 2005 had a rating that was below the average for that year? Limit all results and calculations to movies at least 70 minutes long.
+```{r}
+query12 <- "select count(title) from movies where year = 2005 and length >= 70 and rating < (select avg(rating) as avgRating from movies where year = 2005 and length >= 70)"
+dbGetQuery(con, query12)
+```
+
+13. It is an interesting problem to consider a movie quality metric that takes both average rating and the number of ratings into account. For example, which would you say is the higher quality movie: a movie with one rating of 10, or a movie with twenty ratings of 9? Probably the second, although its average rating is lower than the first one. Here is an idea for a formula that takes into account both rating and votes: https://math.stackexchange.com/questions/942738/algorithm-to-calculate-rating-based-on-multiple-reviews-using-both-review-score
+The formula given in the first response is 
+quality = 5.0*rating/10 + 5.0*(1-EXP(-votes/Q))
+Let's (arbitrarily) set Q = 15; in the formula given in the link it is basically a subjective weight.
+Compute the quality metric for each movie in 2005 that is at least 70 minutes long, where rank and votes is not null. What is the highest value of this metric for the movies in this group? Round your answer to two decimals. 
+```{r}
+query13 <- "select 5.0*rating/10 + 5.0*(1 - exp(-votes/15)) as formula from movies where year = 2005 and length >= 70 and rating is not null and votes is not null order by formula desc"
+dbGetQuery(con, query13)
+```
+(If someone has seen a better metric for this sort of ranking, please let me know!)
+
+```{r}
+dbDisconnect(con) 
+```
+
+#################################
+#################################
+
+For the last question we will use data tables in the dslabs package. Read the "murders" data frame into a data table of the same name, and read the "polls_us_election_2016 dataframe" into a data table named "polls2016". 
+```{r}
+library(dslabs)
+con <- dbConnect(RSQLite::SQLite(), "")
+data(murders)
+data(polls_us_election_2016)
+dbWriteTable(con, "murders", murders)
+dbWriteTable(con, "polls2016", polls_us_election_2016)
+```
+
+Create a query that includes, for each state (including D.C), the variables state, total, and population from the murders table and adjpoll_Clinton, adjpoll_Trump from the polls2016 table. How many rows are returned in your query?
+```{r}
+query14 <- "select murders.state, total, murders.population, adjpoll_Clinton, 
+              adjpoll_Trump
+            from murders 
+            inner join polls2016 on murders.state = polls2016.state"
+dbGetQuery(con, query14)
+```
+
+
+
+```{r}
+dbDisconnect(con) 
+```
+
