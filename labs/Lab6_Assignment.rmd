@@ -1,0 +1,72 @@
+---
+title: "Lab 6 Assignment"
+output: html_document
+---
+
+Read through the "CASE" and "LEFT,RIGHT,CROSS_JOINS" tutorials. Then, answer the following items. Upload your knitted RMD file to Sakai.
+
+########################
+########################
+The first problem set involves the movies data from the ggplot2movies package:
+```{r}
+library(RSQLite)
+library(ggplot2movies)
+library(tidyverse)
+data(movies)
+con <- dbConnect(RSQLite::SQLite(), "")
+dbWriteTable(con, "movies", movies)
+```
+
+1. Create a categorical variable for length, where movies less than 59 minutes long are labeled "Short", between 59 and 150 minutes are "Moderate", and greater than 150 are labeled "Long". Order your results by rating, greatest to least. When preparing your draft to hand in, limit your query to reporting 20 rows.
+```{r}
+query1 <- "select rating, length,
+              case when length < 59 then 'Short'
+                   when length between 59 and 150 then 'Moderate'
+                   else 'Long'
+              end as length_class
+          from movies
+          order by rating desc
+          limit 20"
+dbGetQuery(con, query1)
+```
+
+2. Inspired by the movie rating aggregator rottentomatoes.com,create fresh/rotten rating for each 2005 movie, where fresh if it is above the 2005 average and rotten if it is below. Sort your results by length, shortest to longest. Limit your results to movies at least 70 minutes long. When preparing your draft to hand in, limit your query to reporting 20 rows.
+```{r}
+query2 <- "select rating, year, title, length, 
+              case when rating > (select avg(rating) as avgRating from movies
+                                where year = 2005 and length >= 70) then 'Fresh'
+                 else 'Rotten'
+              end as tomato_rating
+            from movies
+            where year = 2005 and length >= 70
+            order by length
+            limit 20"
+dbGetQuery(con, query2)
+```
+```{r}
+dbDisconnect(con)
+```
+
+3. Return to the database you created for Lab 1. For the first chunk of R code, do an INNER JOIN on two of the tables. Then, in the 2nd chunk of code, do a LEFT JOIN to obtain the rows that were not joined in the previous query. If you do not wish to use your database or you deleted it, then you can use my Star Wars database in the Data folder on Sakai.
+
+```{r}
+con <- dbConnect(SQLite(), "~/SQLforDataScience/data/PeopleSnacks.sqlite")
+query3 <- "select people.name, FavoriteSnack, Occupation
+           from People
+           inner join CharacInfo on people.name = CharacInfo.name"
+dbGetQuery(con, query3)
+```
+
+
+```{r}
+query4 <-   "select people.name, FavoriteSnack, Occupation
+            from People 
+            left join CharacInfo on People.name = CharacInfo.name"
+dbGetQuery(con, query4)
+```
+```{r}
+dbDisconnect(con)
+```
+
+
+
